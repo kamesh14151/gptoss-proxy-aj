@@ -1,0 +1,5 @@
+name = "free-ai-proxy"
+main = "free-ai-worker.js"
+compatibility_date = "2024-10-01"
+
+# No environment variables needed - completely free!

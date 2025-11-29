@@ -1,0 +1,5 @@
+name = "completely-free-ai"
+main = "completely-free-worker.js"
+compatibility_date = "2024-10-01"
+
+# Completely free - no tokens, no auth, no limits!

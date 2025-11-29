@@ -1,0 +1,12 @@
+name = "gptoss-proxy-aj-fixed"
+main = "worker-fixed.js"
+compatibility_date = "2024-10-01"
+
+# Environment variables for production
+[env.production.vars]
+# HF_TOKEN = "your_hugging_face_token_here"
+
+# You can set the HF_TOKEN via wrangler secret:
+# wrangler secret put HF_TOKEN
+
+# Or pass it as a header: X-HF-Token: your_token
