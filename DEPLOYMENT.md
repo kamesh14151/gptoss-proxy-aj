@@ -25,7 +25,7 @@ Add the following environment variable to your Cloudflare Worker:
 - `POST /v1/chat/completions` - Chat completions (OpenAI-compatible)
 
 ### Supported Models:
-- `gpt-oss-20b` (maps to `gpt-oss-20b` in Ollama)
+- `gpt-oss-20b` (maps to `gpt-oss:20b` in Ollama)
 - `gpt-oss-120b` (maps to `gpt-oss:120b` in Ollama)
 
 ### Example Usage:

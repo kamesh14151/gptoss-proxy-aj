@@ -36,7 +36,7 @@ export default {
 /* ----------------------- constants ----------------------- */
 
 const OLLAMA_URL = "https://ollama.com/api/chat";
-const SUPPORTED_MODELS = new Set(["gpt-oss:120b", "gpt-oss-20b"]);
+const SUPPORTED_MODELS = new Set(["gpt-oss:120b", "gpt-oss:20b"]);
 
 
 
