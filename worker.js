@@ -187,8 +187,8 @@ async function openAICompatible(req, env) {
       };
     }
     
-    // Add AJ signature to responses
-    if (content && !content.includes("AJ")) {
+    // Add AJ signature only to AJ model responses
+    if (isAJModel && content && !content.includes("AJ")) {
       content += "\n\n—AJ (Built by AJ STUDIOZ)";
     }
     
@@ -208,12 +208,17 @@ async function openAICompatible(req, env) {
         },
       ],
       usage: usage,
-      system_fingerprint: JSON.stringify({
-        ai_name: "AJ",
-        built_by: "AJ STUDIOZ",
-        gptoss_thread_id: `thr_${cryptoRandomId(8)}`,
-        reasoning_joined: ""
-      }),
+      system_fingerprint: JSON.stringify(
+        isAJModel ? {
+          ai_name: "AJ",
+          built_by: "AJ STUDIOZ",
+          gptoss_thread_id: `thr_${cryptoRandomId(8)}`,
+          reasoning_joined: ""
+        } : {
+          gptoss_thread_id: `thr_${cryptoRandomId(8)}`,
+          reasoning_joined: ""
+        }
+      ),
     };
     return new Response(JSON.stringify(resp), {
       status: 200,
