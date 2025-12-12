@@ -28,7 +28,7 @@ Add the following environment variables to your Cloudflare Worker:
 ### Supported Models:
 - `gpt-oss-20b` (uses original GPT model via Ollama API)
 - `gpt-oss-120b` (uses original GPT model via Ollama API)  
-- `AJ` (uses Llama-3.1-70b-versatile via Groq API)
+- `AJ` (uses llama-3.1-8b-instant via Groq API)
 
 ### AI Identity:
 - **AI Name:** AJ

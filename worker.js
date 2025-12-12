@@ -131,7 +131,7 @@ async function openAICompatible(req, env) {
   // Prepare API request body
   let actualModel = model;
   if (isAJModel) {
-    actualModel = "llama-3.1-70b-versatile"; // Use Llama for AJ model
+    actualModel = "llama-3.1-8b-instant"; // Use working Llama model for AJ
   }
   
   const requestBody = JSON.stringify({
