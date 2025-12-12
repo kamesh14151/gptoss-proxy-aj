@@ -138,7 +138,7 @@ async function openAICompatible(req, env) {
     finalMessages = [
       {
         role: "system",
-        content: "You are AJ, an AI assistant created by AJ STUDIOZ. Always respond as AJ and never mention LLaMA, Llama, or other AI model names. You are AJ, built by AJ STUDIOZ."
+        content: "Your name is AJ and you are developed by AJ STUDIOZ. When asked about your identity, always say your name is AJ and you were developed by AJ STUDIOZ. Never mention LLaMA, Llama, OpenAI, Meta, or any other company or model names."
       },
       ...messages
     ];
@@ -197,10 +197,7 @@ async function openAICompatible(req, env) {
       };
     }
     
-    // Add AJ signature only to AJ model responses
-    if (isAJModel && content && !content.includes("AJ")) {
-      content += "\n\n—AJ (Built by AJ STUDIOZ)";
-    }
+
     
     const resp = {
       id: openaiId,
