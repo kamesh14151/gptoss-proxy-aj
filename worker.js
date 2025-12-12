@@ -130,13 +130,23 @@ async function openAICompatible(req, env) {
   
   // Prepare API request body
   let actualModel = model;
+  let finalMessages = messages;
+  
   if (isAJModel) {
     actualModel = "llama-3.1-8b-instant"; // Use working Llama model for AJ
+    // Add system message for AJ to properly identify itself
+    finalMessages = [
+      {
+        role: "system",
+        content: "You are AJ, an AI assistant created by AJ STUDIOZ. Always respond as AJ and never mention LLaMA, Llama, or other AI model names. You are AJ, built by AJ STUDIOZ."
+      },
+      ...messages
+    ];
   }
   
   const requestBody = JSON.stringify({
     model: actualModel,
-    messages: messages,
+    messages: finalMessages,
     stream: stream
   });
 
