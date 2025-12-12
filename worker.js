@@ -8,9 +8,12 @@ export default {
       return new Response(
         JSON.stringify({
           success: true,
+          ai_name: "AJ",
+          built_by: "AJ STUDIOZ",
           discord: "https://discord.gg/cwDTVKyKJz",
           website: "https://ish.junioralive.in",
-          repo: "https://github.com/junioralive/gptoss-proxy",
+          repo: "https://github.com/kamesh14151/gptoss-proxy-aj",
+          supported_models: ["gpt-oss:120b", "gpt-oss:20b", "llama-3.1-70b-versatile"]
         }),
         { status: 200, headers: corsHeaders({ "content-type": "application/json" }) }
       );
@@ -36,7 +39,8 @@ export default {
 /* ----------------------- constants ----------------------- */
 
 const OLLAMA_URL = "https://ollama.com/api/chat";
-const SUPPORTED_MODELS = new Set(["gpt-oss:120b", "gpt-oss:20b"]);
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const SUPPORTED_MODELS = new Set(["gpt-oss:120b", "gpt-oss:20b", "llama-3.1-70b-versatile"]);
 
 
 
@@ -107,7 +111,7 @@ async function openAICompatible(req, env) {
   const stream = Boolean(body && body.stream);
   const messages = (body && Array.isArray(body.messages) && body.messages) || [];
 
-  // Map OpenAI model names to Ollama model names
+  // Map OpenAI model names to API-specific model names
   if (model === "gpt-oss-120b") model = "gpt-oss:120b";
   if (model === "gpt-oss-20b") model = "gpt-oss:20b";
 
@@ -120,8 +124,12 @@ async function openAICompatible(req, env) {
     );
   }
 
-  // Prepare Ollama API request body
-  const ollamaBody = JSON.stringify({
+  // Determine which API to use based on model
+  const isGroqModel = model.startsWith("llama");
+  const apiUrl = isGroqModel ? GROQ_URL : OLLAMA_URL;
+  
+  // Prepare API request body
+  const requestBody = JSON.stringify({
     model: model,
     messages: messages,
     stream: stream
@@ -131,15 +139,17 @@ async function openAICompatible(req, env) {
     "Content-Type": "application/json"
   };
   
-  // Add Authorization header if OLLAMA_API_KEY is available in environment
-  if (env && env.OLLAMA_API_KEY) {
+  // Add Authorization headers based on API
+  if (isGroqModel && env && env.GROQ_API_KEY) {
+    headers["Authorization"] = `Bearer ${env.GROQ_API_KEY}`;
+  } else if (!isGroqModel && env && env.OLLAMA_API_KEY) {
     headers["Authorization"] = `Bearer ${env.OLLAMA_API_KEY}`;
   }
 
-  const upstream = await fetch(OLLAMA_URL, {
+  const upstream = await fetch(apiUrl, {
     method: "POST",
     headers,
-    body: ollamaBody,
+    body: requestBody,
   });
 
   if (!upstream.ok) {
@@ -153,30 +163,49 @@ async function openAICompatible(req, env) {
   const openaiId = `chatcmpl_${cryptoRandomId(24)}`;
 
   if (!stream) {
-    const ollamaResponse = await upstream.json();
+    const apiResponse = await upstream.json();
     
-    // Convert Ollama response to OpenAI format
+    let content = "";
+    let usage = { prompt_tokens: null, completion_tokens: null, total_tokens: null };
+    
+    if (isGroqModel) {
+      // Groq returns OpenAI-compatible format
+      content = apiResponse.choices?.[0]?.message?.content || "";
+      usage = apiResponse.usage || usage;
+    } else {
+      // Ollama format
+      content = apiResponse.message?.content || "";
+      usage = {
+        prompt_tokens: apiResponse.prompt_eval_count || null,
+        completion_tokens: apiResponse.eval_count || null,
+        total_tokens: (apiResponse.prompt_eval_count || 0) + (apiResponse.eval_count || 0) || null
+      };
+    }
+    
+    // Add AJ signature to responses
+    if (content && !content.includes("AJ")) {
+      content += "\n\n—AJ (Built by AJ STUDIOZ)";
+    }
+    
     const resp = {
       id: openaiId,
       object: "chat.completion",
       created,
-      model: body.model || "gpt-oss-120b", // Return original model name
+      model: body.model || "gpt-oss-120b",
       choices: [
         {
           index: 0,
           message: { 
             role: "assistant", 
-            content: ollamaResponse.message?.content || "" 
+            content: content
           },
           finish_reason: "stop",
         },
       ],
-      usage: { 
-        prompt_tokens: ollamaResponse.prompt_eval_count || null, 
-        completion_tokens: ollamaResponse.eval_count || null, 
-        total_tokens: (ollamaResponse.prompt_eval_count || 0) + (ollamaResponse.eval_count || 0) || null 
-      },
+      usage: usage,
       system_fingerprint: JSON.stringify({
+        ai_name: "AJ",
+        built_by: "AJ STUDIOZ",
         gptoss_thread_id: `thr_${cryptoRandomId(8)}`,
         reasoning_joined: ""
       }),
@@ -231,8 +260,21 @@ async function openAICompatible(req, env) {
               continue;
             }
 
-            // Handle Ollama streaming response format
-            if (ollamaChunk.message && ollamaChunk.message.content) {
+            // Handle streaming response format for both APIs
+            let deltaContent = "";
+            let isDone = false;
+            
+            if (isGroqModel) {
+              // Groq returns OpenAI-compatible chunks
+              deltaContent = ollamaChunk.choices?.[0]?.delta?.content || "";
+              isDone = ollamaChunk.choices?.[0]?.finish_reason === "stop";
+            } else {
+              // Ollama format
+              deltaContent = ollamaChunk.message?.content || "";
+              isDone = ollamaChunk.done === true;
+            }
+            
+            if (deltaContent) {
               const chunk = {
                 id: openaiId,
                 object: "chat.completion.chunk",
@@ -240,7 +282,7 @@ async function openAICompatible(req, env) {
                 model: body.model || "gpt-oss-120b",
                 choices: [{ 
                   index: 0, 
-                  delta: { content: ollamaChunk.message.content }, 
+                  delta: { content: deltaContent }, 
                   finish_reason: null 
                 }],
               };
@@ -248,7 +290,7 @@ async function openAICompatible(req, env) {
             }
 
             // Check if done
-            if (ollamaChunk.done === true) {
+            if (isDone) {
               const end = {
                 id: openaiId,
                 object: "chat.completion.chunk",

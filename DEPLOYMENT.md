@@ -11,8 +11,9 @@ This worker has been modified to work with the Ollama API instead of the origina
 - Simplified the code by removing GPT-OSS specific features
 
 ### Environment Variables:
-Add the following environment variable to your Cloudflare Worker:
+Add the following environment variables to your Cloudflare Worker:
 - `OLLAMA_API_KEY` - Your Ollama API key (optional, if Ollama requires authentication)
+- `GROQ_API_KEY` - Your Groq API key (required for Llama models)
 
 ### Deployment:
 1. Use `wrangler deploy` to deploy the worker
@@ -26,7 +27,13 @@ Add the following environment variable to your Cloudflare Worker:
 
 ### Supported Models:
 - `gpt-oss-20b` (maps to `gpt-oss:20b` in Ollama)
-- `gpt-oss-120b` (maps to `gpt-oss:120b` in Ollama)
+- `gpt-oss-120b` (maps to `gpt-oss:120b` in Ollama)  
+- `llama-3.1-70b-versatile` (uses Groq API)
+
+### AI Identity:
+- **AI Name:** AJ
+- **Built by:** AJ STUDIOZ
+- All responses include AJ's signature and branding
 
 ### Example Usage:
 ```bash
