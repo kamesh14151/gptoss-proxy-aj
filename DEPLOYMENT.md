@@ -26,9 +26,9 @@ Add the following environment variables to your Cloudflare Worker:
 - `POST /v1/chat/completions` - Chat completions (OpenAI-compatible)
 
 ### Supported Models:
-- `gpt-oss-20b` (maps to `gpt-oss:20b` in Ollama)
-- `gpt-oss-120b` (maps to `gpt-oss:120b` in Ollama)  
-- `llama-3.1-70b-versatile` (uses Groq API)
+- `gpt-oss-20b` (internally uses Llama via Groq API)
+- `gpt-oss-120b` (internally uses Llama via Groq API)  
+- `AJ` (internally uses Llama via Groq API)
 
 ### AI Identity:
 - **AI Name:** AJ
@@ -37,6 +37,16 @@ Add the following environment variables to your Cloudflare Worker:
 
 ### Example Usage:
 ```bash
+# Using AJ model name
+curl https://your-worker.workers.dev/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model":"AJ",
+    "messages":[{"role":"user","content":"Hello AJ!"}],
+    "stream":false
+  }'
+
+# Using legacy model names (all internally use Llama)
 curl https://your-worker.workers.dev/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{

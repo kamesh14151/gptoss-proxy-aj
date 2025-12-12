@@ -13,7 +13,7 @@ export default {
           discord: "https://discord.gg/cwDTVKyKJz",
           website: "https://ish.junioralive.in",
           repo: "https://github.com/kamesh14151/gptoss-proxy-aj",
-          supported_models: ["gpt-oss:120b", "gpt-oss:20b", "llama-3.1-70b-versatile"]
+          supported_models: ["gpt-oss:120b", "gpt-oss:20b", "AJ"]
         }),
         { status: 200, headers: corsHeaders({ "content-type": "application/json" }) }
       );
@@ -40,7 +40,7 @@ export default {
 
 const OLLAMA_URL = "https://ollama.com/api/chat";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const SUPPORTED_MODELS = new Set(["gpt-oss:120b", "gpt-oss:20b", "llama-3.1-70b-versatile"]);
+const SUPPORTED_MODELS = new Set(["gpt-oss:120b", "gpt-oss:20b", "AJ"]);
 
 
 
@@ -124,13 +124,12 @@ async function openAICompatible(req, env) {
     );
   }
 
-  // Determine which API to use based on model
-  const isGroqModel = model.startsWith("llama");
-  const apiUrl = isGroqModel ? GROQ_URL : OLLAMA_URL;
+  // Always use Groq API with Llama model internally, regardless of requested model name
+  const apiUrl = GROQ_URL;
   
-  // Prepare API request body
+  // Prepare API request body - always use Llama model internally
   const requestBody = JSON.stringify({
-    model: model,
+    model: "llama-3.1-70b-versatile", // Always use Llama internally
     messages: messages,
     stream: stream
   });
@@ -139,11 +138,9 @@ async function openAICompatible(req, env) {
     "Content-Type": "application/json"
   };
   
-  // Add Authorization headers based on API
-  if (isGroqModel && env && env.GROQ_API_KEY) {
+  // Add Groq Authorization header
+  if (env && env.GROQ_API_KEY) {
     headers["Authorization"] = `Bearer ${env.GROQ_API_KEY}`;
-  } else if (!isGroqModel && env && env.OLLAMA_API_KEY) {
-    headers["Authorization"] = `Bearer ${env.OLLAMA_API_KEY}`;
   }
 
   const upstream = await fetch(apiUrl, {
@@ -168,19 +165,9 @@ async function openAICompatible(req, env) {
     let content = "";
     let usage = { prompt_tokens: null, completion_tokens: null, total_tokens: null };
     
-    if (isGroqModel) {
-      // Groq returns OpenAI-compatible format
-      content = apiResponse.choices?.[0]?.message?.content || "";
-      usage = apiResponse.usage || usage;
-    } else {
-      // Ollama format
-      content = apiResponse.message?.content || "";
-      usage = {
-        prompt_tokens: apiResponse.prompt_eval_count || null,
-        completion_tokens: apiResponse.eval_count || null,
-        total_tokens: (apiResponse.prompt_eval_count || 0) + (apiResponse.eval_count || 0) || null
-      };
-    }
+    // Always use Groq format since we're always using Llama internally
+    content = apiResponse.choices?.[0]?.message?.content || "";
+    usage = apiResponse.usage || usage;
     
     // Add AJ signature to responses
     if (content && !content.includes("AJ")) {
@@ -264,15 +251,9 @@ async function openAICompatible(req, env) {
             let deltaContent = "";
             let isDone = false;
             
-            if (isGroqModel) {
-              // Groq returns OpenAI-compatible chunks
-              deltaContent = ollamaChunk.choices?.[0]?.delta?.content || "";
-              isDone = ollamaChunk.choices?.[0]?.finish_reason === "stop";
-            } else {
-              // Ollama format
-              deltaContent = ollamaChunk.message?.content || "";
-              isDone = ollamaChunk.done === true;
-            }
+            // Always use Groq format since we're always using Llama internally
+            deltaContent = ollamaChunk.choices?.[0]?.delta?.content || "";
+            isDone = ollamaChunk.choices?.[0]?.finish_reason === "stop";
             
             if (deltaContent) {
               const chunk = {
